@@ -1,4 +1,4 @@
-# first-move-advantage-analysis
+# First Move Advantage Analysis
 Statistical analysis in determining if White has a consistent advantage in Chess
 
 ## Data
