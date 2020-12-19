@@ -2,18 +2,24 @@
 title: "The Significance of the First Move Advantage in Chess"
 author: "Labib Chowdhury"
 date: "21/12/2020"
-output: pdf_document
+header-includes:
+- \usepackage{float}
+- \floatplacement{figure}{H}
+output:
+  pdf_document:
+    fig_cap: yes
+    keep_tex: yes
 ---
 
 Source Code: https://github.com/labib-c/first-move-advantage-analysis
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.pos= "h")
 ```
 ## Abstract
 
 ## Keywords
 
-Chess, First Move, Logistic Regression, Observational Study
+Chess, First Move, White, Black, Logistic Regression, Experiment
 
 ## Introduction
 
@@ -21,16 +27,92 @@ In the world of Chess, one question which remains open is whether or not White h
 
 Chess remains as one of the most popular games of all time, claiming 600 million fans worldwide (Cowen, 2018) hence the significance of Chess cannot be understated. Analyzing whether White has a definite advantage over Black will help novice and expert players understand the game better and modify the strategies utilized by every player.
 
-To identify whether White has a significant advantage over Black in Chess, a logistic regression model will be applied over the LiChess Chess Game Dataset (Jolly, 2017). Logistic regression is best used to describe the relationships between one dependent binary outcome variable against one or more independent predictor variables. The logistic regression model will also provide estimates identifying how a certain predictor affects the outcome in a intuitive manner. 
+To identify whether White has a significant advantage over Black in Chess, a logistic regression model will be applied over the LiChess Chess Game Dataset (Jolly, 2017). Logistic regression is best used to describe the relationships between one dependent binary outcome variable against one or more independent predictor variables. The logistic regression model will also provide estimates identifying how a certain predictor affects the outcome in an intuitive manner. 
 
-An outcome variable of the form `white_won` will be used in the logistic model, where 1 represents games where the White player won and 0 represents games where White lost. The Methodology section (Section 2) will dive deeper into which predictors were chosen and how the logistic regression model was developed. Results of the model can be seen in Section 3, Results, and further discussion on the outcome of the model will be highlighted in Section 4, Discussion.
+An outcome variable of the form `white_won` will be used in the logistic model, where 1 represents games where the White player won and 0 represents games where White lost or tied. The Methodology section (Section 2) will dive deeper into which predictors were chosen and how the logistic regression model was developed. Results of the model can be seen in Section 3, Results, and further discussion on the outcome of the model will be highlighted in Section 4, Discussion.
 
 ## Methodology
 
-Data:
-talk about how this is an experiment since Black and White are randomized
+This section will discuss the dataset further as well as the development and selection of the logistic model.
+
+### Data
+
+The data used in this analysis was retrieved from https://www.kaggle.com/datasnaek/chess. This dataset consists of 20,000 games of chess collected from LiChess.org. The data was assembled using the LiChess API (https://github.com/ornicar/lila), and consists of the most recent games taken from the top 100 teams on LiChess in 2017 (Jolly, 2017). The dataset contains 16 columns, including `white_rating`, `black_rating`, `moves`, `opening_name`, and `winner`, along with several other useful features. Additionally, this data is considered an experiment as LiChess randomly assigns players as Black or White. 
+
+A table summarizing the characteristics of this dataset can be seen in Table 1 below (Revelle, 2020). 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(psych)
+raw_data <- read_csv("data/games.csv")
+
+describe(raw_data) %>% 
+  as.data.frame() %>% 
+  select(n,mean,sd,min,max) %>% 
+  knitr::kable(caption = "Characteristics of Chess Dataset")
+```
+
+
+### Model
+
+To create a logistic model to analyze the relationship between a player controlling the White pieces and winning games, a binary outcome variable denoted as `white_won` was created where if player White won, then this variable would be represented as 1. Otherwise, if Black won or the game was a draw, the variable `white_won` would be represented as 0. 
+
+Two additional variables were also created to assist the analysis. A continuous variable `diff_rating` was created to represent the difference in player rating between White and Black. A variable named `game_type` was created to replace `increment_code` in the raw dataset. This variable represents the game type as an integer, where game type constitutes the time length of the game. 
+
+The selection of predictors for the logistic model was chosen through backward step-wise variable selection. A full model comprised of all predictors was created and then through backward step-wise variable selection, predictors were dropped based on  whether the new model reduced the Bayesian Information Criterion (BIC). The BIC is a criterion which penalizes models containing too many predictors (The Methodology Center). The full model and step-wise model were evaluated by comparing their AUC and ROC Curve, using the `pROC` package in R (Robin et al., 2011), seen in Figure 1.
+
+```{r,  echo=FALSE, message=FALSE,  warning=FALSE, fig.cap="ROC Curve of Full Model and Reduced Model"}
+
+library(tidyverse)
+library(pROC)
+
+data <- read_csv('data/clean_games.csv')
+n <- length(data$white_won)
+chess.full_model <- glm(white_won ~ rated + turns + diff_rating + as.factor(victory_status) + game_type + white_rating + black_rating + as.factor(opening_eco), data = data, family = "binomial")
+chess.step <- step(chess.full_model, k=log(n), trace=0)
+
+#Goodness of Fit: ROC curve
+roc_curve <- function(glm){
+  p2 <- fitted(glm)
+  y <- data$white_won
+  roc_logit2 <- roc(y ~ p2)
+  TPR <- roc_logit2$sensitivities
+  FPR <- 1 - roc_logit2$specificities
+  plot(FPR, TPR, xlim =c(0,1), ylim =c(0,1), type ='l', lty = 1, lwd = 2,col ='red', bty = "n", main="ROC")
+  abline(a = 0, b = 1, lty = 2, col ='blue')
+  text(0.7,0.4,label =paste("AUC = ",round(auc(roc_logit2),4)))
+}
+
+par(mfrow=c(1,2))
+#Full Model
+roc_curve(chess.full_model)
+
+#StepWise Reduced Model
+roc_curve(chess.step)
+```
+
+It is notable that the reduced model has a lower AUC which implies that it is a worse model compared to the full model. Despite this, every predictor in the reduced model is statistically significant. Thus, a model using the chosen significant predictors from the reduced model along with predictors from the full model that were deemed useful for the analysis will be used. The final model consists of predictors `turns`, `diff_rating`, `victory_status` and `game_type` to predict the outcome variable `white_won`. Therefore, we are modeling: (Eq. 1)
+
+$$
+\log({\frac{p}{1-p}}) = \beta_0 + \sum^{K}_{i=1}\beta_ix_i
+$$
+
+where 
+
+* $p$ = the probability of player White winning the chess game.
+
+* $K$ = the number of predictors, as well as the number of levels in each factored predictor.
+
+* $x_i$ = the value of the associated predictor.
+
+* $\beta_0$ = the intercept estimate.
+
+* $\beta_1$ =  the change in log odd for every unit increased in the associated predictor.
+
 
 ## Results
+
+do t test to see if white winning is significant
 
 ## Discussion
 
@@ -41,3 +123,17 @@ Jolly, M. (2017). "Chess Game Dataset (Lichess)". Retrieved December 7, 2020 fro
 Chess Statistics,  Retrieved December 7, 2020 from www.chessgames.com/chessstats.html. 
 
 Cowen, Tyler. (13 Nov. 2018). “Chess Is the Killer App; How and Why a 1,500-Year-Old Game Has Conquered the Internet.” Bloomberg, Retrieved December 7, 2020 from www.bloomberg.com/opinion/articles/2018-11-13/world-chess-championship-2018-is-made-for-the-internet. 
+
+Revelle, William. “Procedures for Psychological, Psychometric, and Personality Research [R Package Psych Version 2.0.12].” The Comprehensive R Archive Network, Comprehensive R Archive Network (CRAN), 16 Dec. 2020, cran.r-project.org/web/packages/psych/index.html. 
+
+The Methodology Center, "AIC vs. BIC", Retrieved December 18, 2020 from www.methodology.psu.edu/resources/AIC-vs-BIC/. 
+
+
+Xavier Robin, Natacha Turck, Alexandre Hainard, Natalia
+Tiberti, Frédérique Lisacek, Jean-Charles Sanchez and Markus
+Müller (2011). pROC: an open-source package for R and S+ to
+analyze and compare ROC curves. BMC Bioinformatics, 12, Retrieved December 18, 2020 from 
+http://www.biomedcentral.com/1471-2105/12/77/
+
+
+

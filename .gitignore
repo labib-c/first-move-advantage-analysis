@@ -5,3 +5,5 @@
 *.Rproj
 *.csv
 data/
+*.tex
+first-move-files/
