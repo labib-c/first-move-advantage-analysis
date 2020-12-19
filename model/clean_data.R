@@ -10,6 +10,7 @@ clean_data <- raw_data %>%
             created_at,
             last_move_at, 
             opening_ply)) %>% 
-  mutate(white_won = ifelse(winner=="white", 1 ,0))
+  mutate(white_won = ifelse(winner=="white", 1 ,0)) %>% 
+  mutate(diff_rating = white_rating - black_rating)
 
 write.csv(clean_data, "data/clean_games.csv")

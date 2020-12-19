@@ -1,7 +1,7 @@
 ---
 title: "The Significance of the First Move Advantage in Chess"
 author: "Labib Chowdhury"
-date: "09/12/2020"
+date: "21/12/2020"
 output: pdf_document
 ---
 
@@ -13,9 +13,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Keywords
 
+Chess, First Move, Logistic Regression, Observational Study
+
 ## Introduction
 
-In the world of Chess, one question which remains open is whether or not White has a significant advantage due to having the first move.The player who controls the White pieces begins the game on attack while the player who controls the Black pieces must defend, which is where this apparent advantage originates. If both players play identically and symmetrically, then White will win a significant majority of the time. The issue with this is that players do not play identically or symmetrically most of the time, in fact White wins only 37% of the time compared to Black's 28%, according to the chessgames.com database of chess games (Chess Statistics). This paper aims to analyze whether White has a significant advantage in Chess due to having the first move, and this will be done through considering multiple factors including rating level, game type, and first move.
+In the world of Chess, one question which remains open is whether or not White has a significant advantage due to having the first move.The player who controls the White pieces begins the game on the attack while the player who controls the Black pieces must defend, which is where this apparent advantage originates. If both players play identically and symmetrically, then White will win a significant majority of the time. The issue with this is that players do not play identically or symmetrically most of the time, in fact White wins only 37% of the time compared to Black's 28%, according to the chessgames.com database of chess games (Chess Statistics). This paper aims to analyze whether White has a significant advantage in Chess due to having the first move, and this will be done through considering multiple factors including rating level, game type, and first move.
 
 Chess remains as one of the most popular games of all time, claiming 600 million fans worldwide (Cowen, 2018) hence the significance of Chess cannot be understated. Analyzing whether White has a definite advantage over Black will help novice and expert players understand the game better and modify the strategies utilized by every player.
 
