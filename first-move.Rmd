@@ -11,7 +11,7 @@ output:
     keep_tex: yes
 ---
 
-Source Code: https://github.com/labib-c/first-move-advantage-analysis
+Supporting Code: https://github.com/labib-c/first-move-advantage-analysis
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.pos= "h")
 ```
@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.pos= "h")
 
 ## Keywords
 
-Chess, First Move, White, Black, Logistic Regression, Experiment
+Chess, First Move, White, Black, Logistic Regression, Experiment, Two Sided t-test
 
 ## Introduction
 
@@ -59,9 +59,24 @@ To create a logistic model to analyze the relationship between a player controll
 
 Two additional variables were also created to assist the analysis. A continuous variable `diff_rating` was created to represent the difference in player rating between White and Black. A variable named `game_type` was created to replace `increment_code` in the raw dataset. This variable represents the game type as an integer, where game type constitutes the time length of the game. 
 
+A table summarizing the characteristics of the cleaned data can be seen in Table 2.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(psych)
+
+data <- read_csv("data/clean_games.csv")
+
+describe(data) %>% 
+  as.data.frame() %>% 
+  select(n,mean,sd,min,max) %>% 
+  knitr::kable(caption = "Characteristics of Cleaned Chess Dataset")
+
+```
+
 The selection of predictors for the logistic model was chosen through backward step-wise variable selection. A full model comprised of all predictors was created and then through backward step-wise variable selection, predictors were dropped based on  whether the new model reduced the Bayesian Information Criterion (BIC). The BIC is a criterion which penalizes models containing too many predictors (The Methodology Center). The full model and step-wise model were evaluated by comparing their AUC and ROC Curve, using the `pROC` package in R (Robin et al., 2011), seen in Figure 1.
 
-```{r,  echo=FALSE, message=FALSE,  warning=FALSE, fig.cap="ROC Curve of Full Model and Reduced Model"}
+```{r,  echo=FALSE, cache=TRUE, message=FALSE,  warning=FALSE, fig.cap="ROC Curve of Full Model and Reduced Model"}
 
 library(tidyverse)
 library(pROC)
@@ -91,7 +106,7 @@ roc_curve(chess.full_model)
 roc_curve(chess.step)
 ```
 
-It is notable that the reduced model has a lower AUC which implies that it is a worse model compared to the full model. Despite this, every predictor in the reduced model is statistically significant. Thus, a model using the chosen significant predictors from the reduced model along with predictors from the full model that were deemed useful for the analysis will be used. The final model consists of predictors `turns`, `diff_rating`, `victory_status` and `game_type` to predict the outcome variable `white_won`. Therefore, we are modeling: (Eq. 1)
+It is notable that the reduced model has a lower AUC which implies that it is a worse model compared to the full model. Despite this, every predictor in the reduced model is statistically significant. Thus, a model using the chosen significant predictors from the reduced model along with predictors from the full model that were deemed useful for the analysis will be used. The final model consists of predictors `turns`, `diff_rating`, and `game_type` to predict the outcome variable `white_won`. Therefore, we are modeling: (Eq. 1)
 
 $$
 \log({\frac{p}{1-p}}) = \beta_0 + \sum^{K}_{i=1}\beta_ix_i
@@ -109,12 +124,56 @@ where
 
 * $\beta_1$ =  the change in log odd for every unit increased in the associated predictor.
 
+A second model will be created to assess the relation between the first move made and the probability of White winning the game, where the outcome variable is `white_won` and the predictor is `opening_eco`. The variable `opening_eco` refers to a code representing the first move, where each code's corresponding move name can be found here: https://www.365chess.com/eco.php. 
 
 ## Results
 
-do t test to see if white winning is significant
+The summary of the logistic model can be seen in Table 3.
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+library(janitor)
+library(tidyverse)
+
+data <- read_csv('data/clean_games.csv')
+chess.glm <- glm(white_won ~ turns + diff_rating + game_type, data = data, family = "binomial")
+
+chess.glm %>% 
+  broom::tidy() %>% 
+  knitr::kable(caption = "Summary of Logistic Model")
+
+```
+
+The table displaying the top and bottom coefficients of  the logistic model using only the `opening_eco` variable as a predictor can be seen in Tables 4 and 5.
+
+```{r echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
+library(janitor)
+library(tidyverse)
+
+data <- read_csv('data/clean_games.csv')
+# best opening move for white  
+chess.opening_eco <- glm(white_won ~ opening_eco, data = data, family = "binomial")
+sort(coefficients(chess.opening_eco), decreasing = TRUE) %>% 
+  broom::tidy() %>% 
+  head() %>% 
+  knitr::kable(caption = "Top Coefficients of Opening Moves")
+
+sort(coefficients(chess.opening_eco), decreasing = TRUE) %>% 
+  broom::tidy() %>% 
+  tail() %>% 
+  knitr::kable(caption = "Bottom Coefficients of Opening Moves")
+```
+A two sided t-test was performed along with the logistic model, where the results can be seen in Table 6.
+
+```{r, echo=FALSE, cache=TRUE, message=FALSE, warning=FALSE}
+t.test(data$white_won, mu = 0.50, alternative = "two.sided") %>% 
+  broom::tidy() %>% 
+  knitr::kable(caption = "Two Sided t-test Results")
+```
+
 
 ## Discussion
+
+
 
 ## References
 
