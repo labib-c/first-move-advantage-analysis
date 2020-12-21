@@ -17,13 +17,15 @@ knitr::opts_chunk$set(echo = TRUE, fig.pos= "h")
 ```
 ## Abstract
 
+The purpose of this analysis is to determine whether the White player in Chess has a significant advantage due to having the first move, using the LiChess dataset from Kaggle (https://www.kaggle.com/datasnaek/chess). This was done using a logistic regression model through a binary outcome variable representing whether player White won the game. It was found that White does not have a significant advantage due to having the first move, and the first move advantage becomes less significant the longer a Chess game goes.
+
 ## Keywords
 
 Chess, First Move, White, Black, Logistic Regression, Experiment, Two Sided t-test
 
 ## Introduction
 
-In the world of Chess, one question which remains open is whether or not White has a significant advantage due to having the first move.The player who controls the White pieces begins the game on the attack while the player who controls the Black pieces must defend, which is where this apparent advantage originates. If both players play identically and symmetrically, then White will win a significant majority of the time. The issue with this is that players do not play identically or symmetrically most of the time, in fact White wins only 37% of the time compared to Black's 28%, according to the chessgames.com database of chess games (Chess Statistics). This paper aims to analyze whether White has a significant advantage in Chess due to having the first move, and this will be done through considering multiple factors including rating level, game type, and first move.
+In the world of Chess, one question which remains open is whether or not White has a significant advantage due to having the first move. The player who controls the White pieces begins the game on the attack while the player who controls the Black pieces must defend, which is where this apparent advantage originates. If both players play identically and symmetrically, then White will win a significant majority of the time. The issue with this is that players do not play identically or symmetrically most of the time, in fact White wins only 37% of the time compared to Black's 28%, according to the chessgames.com database of chess games (Chess Statistics). This paper aims to analyze whether White has a significant advantage in Chess due to having the first move, and this will be done through considering multiple factors including rating level, game type, and first move.
 
 Chess remains as one of the most popular games of all time, claiming 600 million fans worldwide (Cowen, 2018) hence the significance of Chess cannot be understated. Analyzing whether White has a definite advantage over Black will help novice and expert players understand the game better and modify the strategies utilized by every player.
 
@@ -37,9 +39,9 @@ This section will discuss the dataset further as well as the development and sel
 
 ### Data
 
-The data used in this analysis was retrieved from https://www.kaggle.com/datasnaek/chess. This dataset consists of 20,000 games of chess collected from LiChess.org. The data was assembled using the LiChess API (https://github.com/ornicar/lila), and consists of the most recent games taken from the top 100 teams on LiChess in 2017 (Jolly, 2017). The dataset contains 16 columns, including `white_rating`, `black_rating`, `moves`, `opening_name`, and `winner`, along with several other useful features. Additionally, this data is considered an experiment as LiChess randomly assigns players as Black or White. 
+The data used in this analysis was retrieved from https://www.kaggle.com/datasnaek/chess. This dataset consists of 20,000 games of chess collected from LiChess.org. The data was assembled using the LiChess API (https://github.com/ornicar/lila), and consists of the most recent games taken from the top 100 teams on LiChess in 2017 (Jolly, 2017). The dataset contains 16 columns, including `white_rating`, `black_rating`, `moves`, `opening_name`, and `winner`, along with several other useful features. Additionally, this data is considered an experiment as LiChess randomly assigns players as Black or White. The population this dataset attempts to measure would be all players of online Chess, the frame being all LiChess members, and the sample would be the 20,000 most recent games taken from the top 100 teams on LiChess.
 
-A table summarizing the characteristics of this dataset can be seen in Table 1 below (Revelle, 2020). 
+A table summarizing the characteristics of this dataset can be seen in Table 1 below (Revelle, 2020), along with a plot displaying the frequency of a White win, a Black win, and a draw (Figure 1).
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 library(tidyverse)
@@ -52,8 +54,16 @@ describe(raw_data) %>%
   knitr::kable(caption = "Characteristics of Chess Dataset")
 ```
 
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="Frequency of Winners"}
+library(ggplot2)
 
-### Model
+ggplot(raw_data, aes(winner)) + 
+  geom_bar(fill = "#0073C2FF") + 
+  theme_classic() +
+  ggtitle("Frequency of Winner Type") +
+  labs(x = "Winner", y = "Count")
+
+```
 
 To create a logistic model to analyze the relationship between a player controlling the White pieces and winning games, a binary outcome variable denoted as `white_won` was created where if player White won, then this variable would be represented as 1. Otherwise, if Black won or the game was a draw, the variable `white_won` would be represented as 0. 
 
@@ -74,7 +84,9 @@ describe(data) %>%
 
 ```
 
-The selection of predictors for the logistic model was chosen through backward step-wise variable selection. A full model comprised of all predictors was created and then through backward step-wise variable selection, predictors were dropped based on  whether the new model reduced the Bayesian Information Criterion (BIC). The BIC is a criterion which penalizes models containing too many predictors (The Methodology Center). The full model and step-wise model were evaluated by comparing their AUC and ROC Curve, using the `pROC` package in R (Robin et al., 2011), seen in Figure 1.
+### Model
+
+The selection of predictors for the logistic model was chosen through backward step-wise variable selection. A full model comprised of all predictors was created and then through backward step-wise variable selection, predictors were dropped based on  whether the new model reduced the Bayesian Information Criterion (BIC). The BIC is a criterion which penalizes models containing too many predictors (The Methodology Center). The full model and step-wise model were evaluated by comparing their AUC and ROC Curve, using the `pROC` package in R (Robin et al., 2011), seen in Figure 2.
 
 ```{r,  echo=FALSE, cache=TRUE, message=FALSE,  warning=FALSE, fig.cap="ROC Curve of Full Model and Reduced Model"}
 
@@ -106,7 +118,7 @@ roc_curve(chess.full_model)
 roc_curve(chess.step)
 ```
 
-It is notable that the reduced model has a lower AUC which implies that it is a worse model compared to the full model. Despite this, every predictor in the reduced model is statistically significant. Thus, a model using the chosen significant predictors from the reduced model along with predictors from the full model that were deemed useful for the analysis will be used. The final model consists of predictors `turns`, `diff_rating`, and `game_type` to predict the outcome variable `white_won`. Therefore, we are modeling: (Eq. 1)
+It is notable that the reduced model has a lower AUC which implies that it is a worse model compared to the full model. Despite this, the Akaike Information Criterion (AIC) is lower, which suggests a better model fit (The Methodology Center). Thus, a model using the chosen significant predictors from the reduced model along with predictors from the full model that were deemed useful for the analysis will be used. The final model consists of predictors `turns`, `diff_rating`, and `game_type` to predict the outcome variable `white_won`. Therefore, we are modeling: (Eq. 1)
 
 $$
 \log({\frac{p}{1-p}}) = \beta_0 + \sum^{K}_{i=1}\beta_ix_i
@@ -122,9 +134,9 @@ where
 
 * $\beta_0$ = the intercept estimate.
 
-* $\beta_1$ =  the change in log odd for every unit increased in the associated predictor.
+* $\beta_1$ =  the change in log odds for every unit increased in the associated predictor.
 
-A second model will be created to assess the relation between the first move made and the probability of White winning the game, where the outcome variable is `white_won` and the predictor is `opening_eco`. The variable `opening_eco` refers to a code representing the first move, where each code's corresponding move name can be found here: https://www.365chess.com/eco.php. 
+A second model will be created to assess the relation between the first move made and the probability of White winning the game, where the outcome variable is `white_won` and the predictor is `opening_eco`. The variable `opening_eco` refers to a code representing the first move, where each code's corresponding move name can be found here: https://www.365chess.com/eco.php. This model produces a high AIC compared to the first model suggesting it is a poor model fit, but it will be used to assess the variable of interest `opening_eco`.
 
 ## Results
 
@@ -173,11 +185,81 @@ t.test(data$white_won, mu = 0.50, alternative = "two.sided") %>%
 
 ## Discussion
 
+### Summary
 
+In the previous sections, the raw data was cleaned to produce predictors used in the logistic model. The model, created through backward step-wise variable selection and identifying other useful predictors, attempts to model the probability that `white_won` using predictors `turns`, `diff_rating`, and `game_type`. A second model created solely to understand the relationship between `white_won` and `opening_eco` was also developed. Finally, a two-sided t-test was performed on the mean of `white_won` to identify if this was a significant result.
+
+### Conclusions
+
+A two-sided t-test performed using the null hypothesis of "true mean is equal to 0.5" and alternate hypothesis of "true mean is not equal to 0.5" resulted in a p-value of 0.6926. As this p-value is greater than our $\alpha$ value of 0.05, we fail to reject the null hypothesis. This implies that we do not have evidence that player White would win Chess games greater or less than 50% of the time. Using this, the conclusion drawn is that White does not have a significant advantage due to having the first move. The t-test is visualized in Figure 3 using the R package `gginference` (Charalampos and Kleanthis, 2020).
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.cap="t-test Visualization"}
+library(gginference)
+ggttest(t.test(data$white_won, mu = 0.50, alternative = "two.sided"))
+
+```
+
+The coefficients of the first logistic model is seen in Table 3, and describes how the probability of White winning the chess game is affected by each predictor. It is notable that the coefficient for `turns` is -0.00046287 which explains the log odds of White winning the game decreases with every unit of increase in the number of turns. This implies that the longer the chess game goes, White loses their advantage from having the first move by a factor of -0.00046287. Similarly, the coefficient for `game_type` is -0.0013123. As `game_type` refers to the max time length of the game, the log odds of White winning the chess game decreases with every increased unit in `game_type` by a factor of -0.0013123. Combining these two results, it is evident that the significance of the first-move advantage decreases with longer games. One reason for this is that human players are prone to "blunders", where the odds of winning consistently shifts between players as more blunders are made by each player. 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="White winning in Relation to Turns"}
+library(ggplot2)
+
+ggplot(data, aes(x=turns, y=white_won)) + 
+  geom_point(shape=1) + 
+  stat_smooth(method = "glm", method.args = list(family="binomial"), se = FALSE) +
+  ggtitle("Turns vs. White Won")
+
+```
+
+Figures 4 and 5 displays how the probability of White winning in relation to number of turns and game type. It is evident that the probability of White winning decreases steadily as the number of turns increases, while it is less evident the probability decreases with the increase in game type.
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="White winning in Relation to Game Type"}
+library(ggplot2)
+
+ggplot(data, aes(x=game_type, y=white_won)) + 
+  geom_point(shape=1) + 
+  stat_smooth(method = "glm", method.args = list(family="binomial"), se = FALSE) +
+  ggtitle("Game Type vs. White Won")
+
+```
+
+The logistic model provides a positive coefficient for `diff_rating`, which is the difference between player White's rating and player Black's rating. This result is plausible as the higher the difference in rating, the greater advantage player White has. Figure 6 displays the sigmoid relationship between the difference in rating and player White winning; it is seen when the difference in rating is around 0 (i.e. players have relatively equivalent ratings), the odds of White winning is approximately 50%.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="White winning in Relation to Difference in Rating"}
+library(ggplot2)
+
+ggplot(data, aes(x=diff_rating, y=white_won)) + 
+  geom_point(shape=1) + 
+  stat_smooth(method = "glm", method.args = list(family="binomial"), se = FALSE) +
+  ggtitle("Difference in Rating vs. White Won")
+
+```
+
+The second logistic model computes the coefficient for each of the opening moves in relation to their affect on the log odds of player White winning the game. Table 4 and 5 show the highest and lowest coefficients of the given factor levels of `opening_eco`. Using https://www.365chess.com/eco.php to decode the associated codes, it is seen that the best opening moves for White are Benoni, Taimanov variation (A67), Sicilian, Dragon, classical Variation (B74), and Queen's Gambit Declined semi-Slav (D47). Inversely, the worst opening moves for White are Benoni, classical (A71), Dutch, Leningrad (A89), and Queen's Gambit Declined, Tartakower (D58). It is interesting to see that slight variations of one move can result in it being considered a strong opening move or a weak opening move. For example, the Benoni Defense is considered a strong opening under the Taimanov variation while it is considered a weak opening move under the Classical variation.
+
+In conclusion, player White does not win chess games at a significantly higher rate than player Black even with having the first move advantage. The longer the chess game goes for, the log odds of player White winning the game decreases. Using this information, player Black can aim to reduce the significance of player White's first move advantage through extending the game and avoiding blunders in the opening stages.
+
+### Weaknesses
+
+One of the most significant weaknesses of this analysis is the sample size of the dataset. As stated previously, there are an estimated 600 million chess players worldwide and this study analyzes approximately 20,000 players on a single platform. Due to this, the results may not be generalizable to the population of Chess players.
+
+Another weakness with this analysis is in relation to the logistic model. The model produced a rather high AIC score, which can imply a poor model fit. This is also supported through having an AUC between 0.5 and 1 as seen in Figure 2, which can imply the accuracy is not satisfactory.
+
+The fact that Chess is typically a game played by two humans can also be considered a weakness in this topic. Chess is prone to human error, which may not be recorded in the dataset and so analyzing whether a specific player has an advantage may not be accurate. 
+
+
+### Next Steps
+
+In terms of the model, adding interaction terms or other predictors which can model the human error aspect of Chess can help produce a more accurate and meaningful model. Adding more complicated terms can also decrease the AIC and improve the accuracy. It may also be useful to group the data by average rating between player White and player Black as this can show whether the first move advantage is more significant in lower rated games.
+
+The key next step would be to collect more data. This can be done by collecting games from numerous online Chess platforms rather than just LiChess.
 
 ## References
 
 Jolly, M. (2017). "Chess Game Dataset (Lichess)". Retrieved December 7, 2020 from https://www.kaggle.com/datasnaek/chess.
+
+Charalampos Bratsas, Kleanthis (2020). gginference. Open Knowledge Greece. Retrieved December 19, 2020 from https://github.com/okgreece/gginference
 
 Chess Statistics,  Retrieved December 7, 2020 from www.chessgames.com/chessstats.html. 
 
@@ -193,6 +275,5 @@ Tiberti, Frédérique Lisacek, Jean-Charles Sanchez and Markus
 Müller (2011). pROC: an open-source package for R and S+ to
 analyze and compare ROC curves. BMC Bioinformatics, 12, Retrieved December 18, 2020 from 
 http://www.biomedcentral.com/1471-2105/12/77/
-
 
 
