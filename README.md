@@ -1,6 +1,18 @@
 # First Move Advantage Analysis
 Statistical analysis in determining if White has a consistent advantage in Chess
 
+## Table of Contents
+---
+
+- [Data](#data)
+- [Report](./first-move.pdf)
+- [Model Code](./model/)
+    - [Cleaning Data](./model/clean_data.R)
+    - [Variable Selection](./model/variable_selection.R)
+    - [Logistic Model](./model/model.R)
+    - [Significance Test](./model/significance_test.R)
+
+
 ## Data
 https://www.kaggle.com/datasnaek/chess
 
