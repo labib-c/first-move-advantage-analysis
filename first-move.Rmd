@@ -211,7 +211,7 @@ ggplot(data, aes(x=turns, y=white_won)) +
 
 ```
 
-Figures 4 and 5 displays how the probability of White winning in relation to number of turns and game type. It is evident that the probability of White winning decreases steadily as the number of turns increases, while it is less evident the probability decreases with the increase in game type.
+Figures 4 and 5 displays how the probability of White winning in relation to number of turns and game type, using the `stat_smooth` function in `ggplot` (Wickham, 2019). It is evident that the probability of White winning decreases steadily as the number of turns increases, while it is less evident the probability decreases with the increase in game type.
 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="White winning in Relation to Game Type"}
@@ -269,6 +269,7 @@ Revelle, William. “Procedures for Psychological, Psychometric, and Personality
 
 The Methodology Center, "AIC vs. BIC", Retrieved December 18, 2020 from www.methodology.psu.edu/resources/AIC-vs-BIC/. 
 
+Wickham, Hadley. “ggplot2.” stat_smooth | R Documentation, 2019, www.rdocumentation.org/packages/ggplot2/versions/0.9.0/topics/stat_smooth. 
 
 Xavier Robin, Natacha Turck, Alexandre Hainard, Natalia
 Tiberti, Frédérique Lisacek, Jean-Charles Sanchez and Markus
